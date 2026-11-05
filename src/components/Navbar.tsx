@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import navLogo from "@/assets/Nav logo.png";
+import Link from "next/link";
 
 interface NavbarProps {
   navLinksSlot?: React.ReactNode;
@@ -10,7 +11,7 @@ interface NavbarProps {
 
 const Navbar = ({ navLinksSlot, marqueeSlot }: NavbarProps) => {
   const [date, setDate] = useState("");
-  const [user, setUser] = useState(true); // Toggle to true to test user view
+  const [user, setUser] = useState(false); // Toggle to true to test user view
 
   useEffect(() => {
     setDate(
@@ -71,10 +72,10 @@ const Navbar = ({ navLinksSlot, marqueeSlot }: NavbarProps) => {
           ) : (
             <div className="flex items-center gap-2">
               <button className="btn btn-ghost btn-sm font-medium text-gray-700 text-xs sm:text-sm hover:bg-gray-100">
-                সাইন ইন
+                <Link href={"sign-in"}>সাইন ইন</Link>
               </button>
               <button className="btn btn-sm bg-[#05893e] hover:bg-[#047233] text-white font-medium text-xs sm:text-sm px-4 border-none">
-                সাইন আপ
+                <Link href={"/sign-up"}>সাইন আপ</Link>
               </button>
             </div>
           )}
