@@ -28,12 +28,10 @@ const HeroSection = () => {
             {date || "লোড হচ্ছে..."}
           </div>
 
-          {/* Adjusted font size and added xl:whitespace-nowrap to keep it on one line on desktop */}
           <h1 className="text-2xl sm:text-3xl md:text-[32px] lg:text-[36px] font-bold text-[#1D271F] leading-tight xl:whitespace-nowrap">
             আজকের বাজারের দাম এক নজরে
           </h1>
 
-          {/* Removed the <br/> and set max-w-[540px] to naturally wrap into two lines */}
           <p className="text-[#1D271F]/70 text-sm md:text-base leading-relaxed max-w-[540px] mx-auto md:mx-0">
             চাল, ডাল, তেল, সবজি, মাছ, মাংস, ডিম ও মসলার দাম — বাজারভিত্তিক
             বিস্তারিত, গড়, সর্বনিম্ন-সর্বাধিক এবং দামের পরিবর্তন এক জায়গায়।
@@ -49,7 +47,6 @@ const HeroSection = () => {
           </div>
         </div>
 
-        {/* Right Image */}
         <div className="flex-1 w-full flex justify-center md:justify-end">
           <div className="relative w-full max-w-[240px] sm:max-w-xs md:max-w-sm aspect-square">
             <Image

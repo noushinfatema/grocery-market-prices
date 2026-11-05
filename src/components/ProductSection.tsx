@@ -1,8 +1,8 @@
 'use client';
 import { useState, useEffect } from "react";
-import { useSearchParams } from "next/navigation";
-import Link from "next/link";
+import { useSearchParams, useRouter } from "next/navigation";
 import HeroSection from "@/components/HeroSection";
+import { useSession } from "@/lib/auth-client";
 
 interface Product {
   id: number;
@@ -38,15 +38,25 @@ const getUnitText = (unit: string): string => {
   return `প্রতি ${unit}`;
 };
 
-const ProductCard = ({ product }: { product: Product }) => {
+const ProductCard = ({ product, isAuthenticated }: { product: Product; isAuthenticated: boolean }) => {
+  const router = useRouter();
   const isUp = product.change?.dir === "up";
   const isDown = product.change?.dir === "down";
   const icon = product.image || product.categoryIcon || "🛒";
 
+  const handleCardClick = () => {
+    if (isAuthenticated) {
+      // Navigates using the product ID so the detail page API fetch works correctly
+      router.push(`/products/${product.id}`);
+    } else {
+      router.push(`/sign-in`);
+    }
+  };
+
   return (
-    <Link
-      href={`/products/${product.slug}`}
-      className="bg-white rounded-2xl p-4 border border-gray-100 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between"
+    <div
+      onClick={handleCardClick}
+      className="bg-white rounded-2xl p-4 border border-gray-100 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between cursor-pointer"
     >
       <div className="flex items-center gap-3">
         <div className="w-12 h-12 rounded-xl bg-[#F4F6F4] flex items-center justify-center text-2xl shrink-0">
@@ -90,13 +100,15 @@ const ProductCard = ({ product }: { product: Product }) => {
           )}
         </div>
       </div>
-    </Link>
+    </div>
   );
 };
 
 export default function ProductSection() {
   const searchParams = useSearchParams();
   const selectedCategory = searchParams.get("category");
+  const { data: session } = useSession();
+  const isAuthenticated = !!session?.user;
 
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -144,9 +156,6 @@ export default function ProductSection() {
     );
   }
 
-  // ==========================================
-  // CATEGORY VIEW: Render ONLY Category Products
-  // ==========================================
   if (selectedCategory) {
     const categoryName = products[0]?.categoryNameBn || selectedCategory;
     const categoryIcon = products[0]?.categoryIcon || products[0]?.image || "🛒";
@@ -154,38 +163,25 @@ export default function ProductSection() {
     return (
       <div className="bg-[#F0F5F0]/60 py-8 min-h-[60vh]">
         <div className="container mx-auto px-4 max-w-6xl space-y-6">
-          
-          {/* Category Banner Header */}
           <div className="space-y-1">
             <div className="flex items-center gap-2">
               <span className="text-2xl">{categoryIcon}</span>
-              <h1 className="text-2xl sm:text-3xl font-bold text-[#1D271F]">
-                {categoryName}
-              </h1>
+              <h1 className="text-2xl sm:text-3xl font-bold text-[#1D271F]">{categoryName}</h1>
             </div>
-            <p className="text-xs sm:text-sm text-gray-500">
-              এই বিভাগের আজকের দাম ও পরিবর্তন
-            </p>
-            <p className="text-xs sm:text-sm text-gray-500 pt-3">
-              মোট {toBnNum(products.length)}টি পণ্য দেখানো হচ্ছে
-            </p>
+            <p className="text-xs sm:text-sm text-gray-500">এই বিভাগের আজকের দাম ও পরিবর্তন</p>
+            <p className="text-xs sm:text-sm text-gray-500 pt-3">মোট {toBnNum(products.length)}টি পণ্য দেখানো হচ্ছে</p>
           </div>
 
-          {/* Grid of ONLY category products */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {products.map((product) => (
-              <ProductCard key={`cat-prod-${product.id}`} product={product} />
+              <ProductCard key={`cat-prod-${product.id}`} product={product} isAuthenticated={isAuthenticated} />
             ))}
           </div>
-
         </div>
       </div>
     );
   }
 
-  // ==========================================
-  // HOME VIEW: Render Hero + Section A + Section B + Section C
-  // ==========================================
   return (
     <div>
       <HeroSection />
@@ -193,21 +189,19 @@ export default function ProductSection() {
       <div className="bg-[#F0F5F0]/60 py-10 border-t border-gray-100">
         <div className="container mx-auto px-4 max-w-6xl space-y-12">
           
-          {/* Section A: Top 6 Risers */}
           {topRisers.length > 0 && (
             <section className="space-y-4">
               <h2 className="text-xl sm:text-2xl font-bold text-[#1D271F] flex items-center gap-2">
-                <span className="text-red-500">▲</span> আজ দাম বেড়েছে
+                <span className="text-red-500">▲</span> আজ দাম বেড়েছে
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {topRisers.map((product) => (
-                  <ProductCard key={`riser-${product.id}`} product={product} />
+                  <ProductCard key={`riser-${product.id}`} product={product} isAuthenticated={isAuthenticated} />
                 ))}
               </div>
             </section>
           )}
 
-          {/* Section B: Top 6 Fallers */}
           {topFallers.length > 0 && (
             <section className="space-y-4">
               <h2 className="text-xl sm:text-2xl font-bold text-[#1D271F] flex items-center gap-2">
@@ -215,26 +209,21 @@ export default function ProductSection() {
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {topFallers.map((product) => (
-                  <ProductCard key={`faller-${product.id}`} product={product} />
+                  <ProductCard key={`faller-${product.id}`} product={product} isAuthenticated={isAuthenticated} />
                 ))}
               </div>
             </section>
           )}
 
-          {/* Section C: All Products */}
           <section id="সব-পণ্য" className="space-y-4 pt-4 scroll-mt-24">
             <div>
-              <h2 className="text-xl sm:text-2xl font-bold text-[#1D271F]">
-                সব পণ্য
-              </h2>
-              <p className="text-xs sm:text-sm text-gray-500 mt-1">
-                মোট {toBnNum(products.length)}টি পণ্য দেখানো হচ্ছে
-              </p>
+              <h2 className="text-xl sm:text-2xl font-bold text-[#1D271F]">সব পণ্য</h2>
+              <p className="text-xs sm:text-sm text-gray-500 mt-1">মোট {toBnNum(products.length)}টি পণ্য দেখানো হচ্ছে</p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {products.map((product) => (
-                <ProductCard key={`all-${product.id}`} product={product} />
+                <ProductCard key={`all-${product.id}`} product={product} isAuthenticated={isAuthenticated} />
               ))}
             </div>
           </section>

@@ -39,9 +39,9 @@ const Navbar = ({ navLinksSlot, marqueeSlot }: NavbarProps) => {
 
   return (
     <header className="bg-white">
-      {/* Top Header Row */}
+   
       <div className="container mx-auto px-4 py-3 flex justify-between items-center">
-        {/* Brand & Date */}
+
         <Link href="/" className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-lg bg-[#05893e] flex items-center justify-center p-1.5 shrink-0">
             <Image src={navLogo} width={36} height={36} alt="Navbar logo" className="object-contain" />
@@ -54,7 +54,6 @@ const Navbar = ({ navLinksSlot, marqueeSlot }: NavbarProps) => {
           </div>
         </Link>
 
-        {/* Auth / Profile Section */}
         <div>
           {isPending ? (
             <div className="w-24 h-8 bg-gray-100 animate-pulse rounded-lg" />

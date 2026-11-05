@@ -1,5 +1,4 @@
 'use client';
-
 import { useSession, signOut } from "@/lib/auth-client";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -40,7 +39,6 @@ export default function ProfilePage() {
           </p>
         </div>
 
-        {/* User Info Header Card */}
         <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-2xs flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <div className="w-16 h-16 rounded-2xl overflow-hidden bg-[#05893e]/10 border border-gray-100 flex items-center justify-center shrink-0">

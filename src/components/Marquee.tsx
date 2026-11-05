@@ -1,7 +1,5 @@
 'use client';
 import { useEffect, useState } from "react";
-
-// 1. Updated interface to match your actual API response
 interface Product {
   id: number;
   slug: string;
@@ -22,7 +20,6 @@ const toBnNum = (num: number | string) => {
   return num?.toString().replace(/\d/g, (d) => bnDigits[parseInt(d)]);
 };
 
-// Helper to translate common English units to Bengali
 const translateUnit = (unit: string) => {
   const units: Record<string, string> = { kg: "কেজি", gm: "গ্রাম", hali: "হালি", lit: "লিটার", dozen: "ডজন", pcs: "পিস" };
   return units[unit?.toLowerCase()] || unit;
@@ -43,7 +40,6 @@ const Marquee = () => {
 
   if (!products.length) return null;
 
-  // Duplicate list to create seamless infinite loop animation
   const tickerItems = [...products, ...products];
 
   return (
