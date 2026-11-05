@@ -1,7 +1,6 @@
 'use client';
 
-
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useSession } from "@/lib/auth-client";
@@ -12,10 +11,10 @@ const toBnNum = (num: number | string): string => {
   return num.toString().replace(/\d/g, (d) => bnDigits[parseInt(d)]);
 };
 
-export default function ProductDetailPage() {
+function ProductDetailContent() {
   const params = useParams();
   const router = useRouter();
-  const slug = params?.slug as string; // This will receive the product ID from our updated router.push
+  const slug = params?.slug as string; 
 
   const { data: session, isPending: sessionLoading } = useSession();
   const [product, setProduct] = useState<any>(null);
@@ -30,7 +29,6 @@ export default function ProductDetailPage() {
   useEffect(() => {
     if (!slug) return;
     
-    // Using the slug (which is the ID based on our ProductCard update) to fetch the specific product
     fetch(`https://openapi.programming-hero.com/api/bazardor/products/${slug}`)
       .then((res) => res.json())
       .then((data) => {
@@ -48,23 +46,34 @@ export default function ProductDetailPage() {
   }
 
   if (!product) {
-    return <div className="py-20 text-center text-red-500">পণ্য পাওয়া যায়নি</div>;
+    return <div className="py-20 text-center text-red-500">পণ্য পাওয়া যায়নি</div>;
   }
 
   const isUp = product.change?.dir === "up";
   const isDown = product.change?.dir === "down";
   
   const difference = (product.today || 0) - (product.yesterday || 0);
-  const diffText = difference > 0 ? `বেড়েছে + ${toBnNum(difference)}` : difference < 0 ? `কমেছে - ${toBnNum(Math.abs(difference))}` : "অপরিবর্তিত আছে";
+  const diffText = difference > 0 ? `বেড়েছে + ${toBnNum(difference)}` : difference < 0 ? `কমেছে - ${toBnNum(Math.abs(difference))}` : "অপরিবর্তিত আছে";
   const unitText = product.unit === 'kg' ? 'কেজি' : product.unit;
 
-  const markets = product.markets || [
-    { name: "মাঠ বাজার", division: "ময়মনসিংহ", min: 59, max: 62, avg: 62 },
-    { name: "সদর বাজার", division: "রাজশাহী", min: 60, max: 66, avg: 63 },
-    { name: "বাজারঘাট", division: "খুলনা", min: 60, max: 67, avg: 63.5 },
-    { name: "রাসারহাট বাজার", division: "রাজশাহী", min: 60, max: 68, avg: 64 },
-    { name: "চৌর বাজার", division: "ময়মনসিংহ", min: 60, max: 69, avg: 64.5 },
-  ];
+  // Fallback if markets array is missing
+  const rawMarkets = product.markets || [];
+
+  // Calculate dynamic min, max, and avg for each market and overall summary
+  const markets = rawMarkets.map((m: any) => {
+    const avgVal = Number(((m.min + m.max) / 2).toFixed(1));
+    return {
+      ...m,
+      avg: avgVal
+    };
+  });
+
+  // Calculate overall summary stats from markets if available
+  const allMins = markets.map((m: any) => m.min);
+  const allMaxs = markets.map((m: any) => m.max);
+  const overallMin = allMins.length ? Math.min(...allMins) : 0;
+  const overallMax = allMaxs.length ? Math.max(...allMaxs) : 0;
+  const overallAvg = markets.length ? Math.round(markets.reduce((acc: number, m: any) => acc + m.avg, 0) / markets.length) : 0;
 
   return (
     <div className="bg-[#F0F5F0]/40 py-8 min-h-[85vh]">
@@ -81,7 +90,6 @@ export default function ProductDetailPage() {
 
         <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-2xs flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div className="flex items-center gap-5">
-            {/* Emoji */}
             <div className="w-20 h-20 rounded-2xl bg-[#F4F6F4] flex items-center justify-center text-4xl shrink-0">
               {product.image || product.categoryIcon || "🛒"}
             </div>
@@ -98,7 +106,7 @@ export default function ProductDetailPage() {
               </p>
 
               <p className="text-xs text-gray-500 mt-1.5">
-                গতকালকের তুলনায় আজ দাম <span className="font-semibold text-gray-700">{diffText} টাকা</span>
+                গতকালকের তুলনায় আজ দাম <span className="font-semibold text-gray-700">{diffText} টাকা</span>
               </p>
             </div>
           </div>
@@ -122,36 +130,37 @@ export default function ProductDetailPage() {
           </div>
         </div>
 
+        {/* Dynamic Summary Cards */}
         <div className="space-y-4 pt-4">
           <h2 className="text-lg font-bold text-[#1D271F]">দামের সারসংক্ষেপ</h2>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-  
             <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-2xs">
               <span className="text-xs font-semibold text-gray-500 block">সর্বনিম্ন দাম</span>
               <span className="text-xl font-bold text-emerald-600 block my-1.5">
-                {toBnNum(59)} টাকা
+                {toBnNum(overallMin)} টাকা
               </span>
-              <span className="text-[11px] text-gray-400">সবচেয়ে কম দামের বাজার</span>
+              <span className="text-[11px] text-gray-400">সবচেয়ে কম দামের বাজার</span>
             </div>
 
             <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-2xs">
               <span className="text-xs font-semibold text-gray-500 block">সর্বাধিক দাম</span>
               <span className="text-xl font-bold text-red-500 block my-1.5">
-                {toBnNum(73)} টাকা
+                {toBnNum(overallMax)} টাকা
               </span>
-              <span className="text-[11px] text-gray-400">সবচেয়ে বেশি দামের বাজার</span>
+              <span className="text-[11px] text-gray-400">সবচেয়ে বেশি দামের বাজার</span>
             </div>
 
             <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-2xs">
-              <span className="text-xs font-semibold text-gray-500 block">গড় দাম</span>
+              <span className="text-xs font-semibold text-gray-500 block">গড় দাম</span>
               <span className="text-xl font-bold text-[#05893e] block my-1.5">
-                {toBnNum(66)} টাকা
+                {toBnNum(overallAvg)} টাকা
               </span>
               <span className="text-[11px] text-gray-400">প্রতি {unitText}-এর হিসাব</span>
             </div>
           </div>
         </div>
 
+        {/* Market Table */}
         <div className="space-y-4 pt-4">
           <h2 className="text-lg font-bold text-[#1D271F]">বাজারভিত্তিক আজকের দাম</h2>
           <div className="bg-white rounded-2xl border border-gray-100 shadow-2xs overflow-hidden">
@@ -163,16 +172,18 @@ export default function ProductDetailPage() {
                     <th className="p-4 font-semibold">বিভাগ</th>
                     <th className="p-4 font-semibold">সর্বনিম্ন</th>
                     <th className="p-4 font-semibold">সর্বাধিক</th>
-                    <th className="p-4 font-semibold">গড়</th>
+                    <th className="p-4 font-semibold">গড়</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50 text-gray-700">
                   {markets.map((m: any, idx: number) => (
                     <tr key={idx} className="hover:bg-gray-50/50 transition-colors">
-                      <td className="p-4 font-medium text-gray-900">{m.name}</td>
+                      {/* Fixed: changed m.name to m.market */}
+                      <td className="p-4 font-medium text-gray-900">{m.market}</td>
                       <td className="p-4 text-gray-500">{m.division}</td>
                       <td className="p-4">{toBnNum(m.min)} টাকা</td>
                       <td className="p-4">{toBnNum(m.max)} টাকা</td>
+                      {/* Fixed: now displays the dynamically calculated average */}
                       <td className="p-4 font-semibold text-gray-900">{toBnNum(m.avg)} টাকা</td>
                     </tr>
                   ))}
@@ -184,5 +195,13 @@ export default function ProductDetailPage() {
 
       </div>
     </div>
+  );
+}
+
+export default function ProductDetailPage() {
+  return (
+    <Suspense fallback={<div className="py-20 text-center text-gray-400">লোড হচ্ছে...</div>}>
+      <ProductDetailContent />
+    </Suspense>
   );
 }
