@@ -8,7 +8,7 @@ const Navlinks = async () => {
     // console.log(data) ;
     return (
         <div className="container mx-auto py-4 pl-4.5 flex gap-8 text-[12px]">
-            {data?.map((cat:any, id: number)=> <Link href={cat.slug} key={id}>{cat.icon}{cat.nameBn}</Link>)}
+            {data?.map((cat:any, id: number)=> <Link href={'/'} key={id}>{cat.icon}{cat.nameBn}</Link>)}
         </div>
     );
 };

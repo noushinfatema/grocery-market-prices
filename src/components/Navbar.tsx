@@ -1,7 +1,6 @@
 'use client';
 import { useState, useEffect } from "react";
 import Image from "next/image";
-import NavLinks from "@/components/NavLinks";
 import navLogo from "@/assets/Nav logo.png";
 // import { Button } from "@heroui/react";
 
