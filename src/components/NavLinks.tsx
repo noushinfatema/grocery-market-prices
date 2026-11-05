@@ -1,6 +1,6 @@
 'use client';
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
 interface Category {
@@ -11,14 +11,14 @@ interface Category {
 }
 
 const NavLinks = () => {
-  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const currentCategory = searchParams.get("category");
   const [categories, setCategories] = useState<Category[]>([]);
 
   useEffect(() => {
     fetch("https://api.api-store.workers.dev/api/bazardor/categories")
       .then((res) => res.json())
       .then((data) => {
-        // Adjust array path based on backend response shape
         const list = Array.isArray(data) ? data : data?.data || [];
         setCategories(list);
       })
@@ -26,16 +26,16 @@ const NavLinks = () => {
   }, []);
 
   return (
-    <div className="border-t border-gray-100 bg-white">
+    <div className="border-t border-gray-100 bg-white sticky top-0 z-45">
       <div className="container mx-auto px-4">
         <nav className="flex items-center gap-6 overflow-x-auto py-2.5 scrollbar-none text-xs sm:text-sm">
           {categories.map((cat, id) => {
-            const href = cat.slug ? `/category/${cat.slug}` : "/";
-            const isActive = pathname === href || (pathname === "/" && id === 0);
+            const href = `/?category=${cat.slug}`;
+            const isActive = currentCategory === cat.slug;
 
             return (
               <Link
-                key={cat.id || id}
+                key={cat.id || cat.slug || id}
                 href={href}
                 className={`flex items-center gap-1.5 whitespace-nowrap transition-colors font-medium shrink-0 pb-0.5 ${
                   isActive
