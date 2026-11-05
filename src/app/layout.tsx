@@ -28,7 +28,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="min-h-full flex flex-col">
         <Navbar />
         {/* marque */}
-        <main>{children}</main>
+        <main className="min-h-240">{children}</main>
         <Footer />
       </body>
     </html>
