@@ -1,8 +1,12 @@
+// 'use client' ;
 import Image from "next/image";
-import navLogo from "@/assets/Nav logo.png"
+import navLogo from "@/assets/Nav logo.png" ;
 import { Button } from "@heroui/react";
 
 const Navbar = () => {
+    const date = new Date().toLocaleDateString("bn-BD", {
+        dateStyle : "full" ,
+    })
     const user = true ;
   return (
     <div className="navbar bg-base-100 shadow-sm sticky top-0 z-50">
@@ -13,7 +17,7 @@ const Navbar = () => {
           </div>
           <div >
             <p className="font-bold">বাজার দর</p>
-            <p className="text-[12px]">মঙ্গলবার, ৬ অক্টোবর, ২০২৬</p>
+            <p className="text-[12px]">{date}</p>
           </div>
         </div>
         <div className="flex gap-2">
