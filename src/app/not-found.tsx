@@ -1,47 +1,42 @@
+import Link from "next/link";
 
-import React from 'react';
-import Link from 'next/link';
-import { Home, ArrowLeft } from 'lucide-react';
+export default function NotFound() {
+  return (
+    <div className="min-h-[75vh] flex flex-col items-center justify-center py-12 px-4 bg-[#F0F5F0]/40 text-center">
+      <div className="bg-white p-8 sm:p-12 rounded-3xl shadow-xs border border-gray-100 max-w-md w-full space-y-6 flex flex-col items-center">
 
-const NotFound = () => {
-    return (
-        <main className="relative min-h-[70vh] flex flex-col items-center justify-center bg-[#071C16] px-4 py-16 overflow-hidden">
+        <div className="w-20 h-20 rounded-2xl bg-[#05893e]/10 flex items-center justify-center text-4xl shadow-xs">
+          🔍
+        </div>
 
-            <div className="absolute w-96 h-96 bg-emerald-500/10 rounded-full blur-[120px] -top-20 -left-20" />
-            <div className="absolute w-96 h-96 bg-green-400/10 rounded-full blur-[120px] -bottom-20 -right-20" />
+        <div className="space-y-2">
+          <span className="text-[11px] font-bold uppercase tracking-wider text-[#05893e] bg-[#05893e]/10 px-3 py-1 rounded-full inline-block">
+            ৪০৪ | পেজ পাওয়া যায়নি
+          </span>
+          <h1 className="text-2xl sm:text-3xl font-bold text-[#1D271F] pt-2">
+            ক্ষমা করবেন! এই পৃষ্ঠাটি নেই
+          </h1>
+          <p className="text-xs sm:text-sm text-gray-500 leading-relaxed">
+            আপনি যে ঠিকানায় যাওয়ার চেষ্টা করছেন তা সরাতে বা মুছে ফেলা হতে পারে।
+          </p>
+        </div>
 
-            <div className="relative text-center max-w-xl">
+        <div className="flex flex-col sm:flex-row items-center gap-3 w-full pt-2">
+          <Link
+            href="/"
+            className="w-full sm:w-1/2 bg-[#05893e] hover:bg-[#047233] text-white font-medium py-2.5 px-4 rounded-xl text-xs sm:text-sm transition-colors shadow-xs flex items-center justify-center gap-1.5"
+          >
+            🏠 হোম পেজ
+          </Link>
+          <Link
+            href="/#সব-পণ্য"
+            className="w-full sm:w-1/2 border border-gray-200 text-gray-700 hover:bg-gray-50 font-medium py-2.5 px-4 rounded-xl text-xs sm:text-sm transition-colors flex items-center justify-center gap-1.5"
+          >
+            🛍️ সব পণ্য দেখুন
+          </Link>
+        </div>
 
-                <h1 className="text-[140px] md:text-[200px] leading-none font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-emerald-300 to-emerald-700">
-                    404
-                </h1>
-
-                <h2 className="text-3xl md:text-4xl font-bold text-white mt-6">
-                    Lost in the Green?
-                </h2>
-
-                <p className="text-emerald-100/50 mt-4 text-base md:text-lg leading-relaxed max-w-md mx-auto">
-                    Looks like you've wandered into an unknown corner.
-                    The page you're looking for doesn't exist.
-                </p>
-
-                <div className="mt-10 flex justify-center">
-                    <Link
-                        href="/"
-                        className="group flex items-center gap-3 bg-emerald-500 hover:bg-emerald-400 text-[#071C16] font-bold px-8 py-4 rounded-xl transition-all duration-300 shadow-lg shadow-emerald-500/20 hover:-translate-y-1"
-                    >
-                        <Home size={19} />
-                        Back to Homepage
-                        <ArrowLeft size={18} className="rotate-180 group-hover:translate-x-1 transition-transform" />
-                    </Link>
-                </div>
-
-                <p className="mt-12 text-xs tracking-[0.3em] uppercase text-emerald-500/40">
-                    Error 404 · Page Not Found
-                </p>
-            </div>
-        </main>
-    );
-};
-
-export default NotFound;
+      </div>
+    </div>
+  );
+}
