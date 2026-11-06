@@ -1,6 +1,7 @@
 'use client';
-import { useState, useEffect } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useState, useEffect, useMemo } from "react";
+import { useSearchParams, useRouter, notFound } from "next/navigation";
+import Link from "next/link";
 import HeroSection from "@/components/HeroSection";
 import { useSession } from "@/lib/auth-client";
 
@@ -21,13 +22,14 @@ interface Product {
   };
 }
 
+type SortOption = "default" | "low-to-high" | "high-to-low";
+
 const toBnNum = (num: number | string): string => {
   if (num === undefined || num === null) return "০";
   const bnDigits = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
   const formattedStr = Number(num).toLocaleString('en-US');
   return formattedStr.replace(/\d/g, (digit) => bnDigits[parseInt(digit)]);
 };
-
 const getUnitText = (unit: string): string => {
   const normalized = unit?.toLowerCase() || '';
   if (normalized === 'kg') return 'প্রতি কেজি';
@@ -37,25 +39,16 @@ const getUnitText = (unit: string): string => {
   if (normalized === 'pcs' || normalized === 'piece') return 'প্রতি পিস';
   return `প্রতি ${unit}`;
 };
-
 const ProductCard = ({ product, isAuthenticated }: { product: Product; isAuthenticated: boolean }) => {
-  const router = useRouter();
   const isUp = product.change?.dir === "up";
   const isDown = product.change?.dir === "down";
   const icon = product.image || product.categoryIcon || "🛒";
-
-  const handleCardClick = () => {
-    if (isAuthenticated) {
-      // Navigates using the product ID so the detail page API fetch works correctly
-      router.push(`/products/${product.id}`);
-    } else {
-      router.push(`/sign-in`);
-    }
-  };
+  const targetId = product.id || product.slug;
+  const targetUrl = isAuthenticated ? `/products/${targetId}` : "/sign-in";
 
   return (
-    <div
-      onClick={handleCardClick}
+    <Link
+      href={targetUrl}
       className="bg-white rounded-2xl p-4 border border-gray-100 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between cursor-pointer"
     >
       <div className="flex items-center gap-3">
@@ -100,7 +93,7 @@ const ProductCard = ({ product, isAuthenticated }: { product: Product; isAuthent
           )}
         </div>
       </div>
-    </div>
+    </Link>
   );
 };
 
@@ -112,26 +105,55 @@ export default function ProductSection() {
 
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [isNotFound, setIsNotFound] = useState<boolean>(false);
+  const [sortBy, setSortBy] = useState<SortOption>("default");
 
   useEffect(() => {
     setLoading(true);
+    setIsNotFound(false);
+    setSortBy("default");
 
     const apiUrl = selectedCategory
       ? `https://openapi.programming-hero.com/api/bazardor/products?category=${selectedCategory}`
       : "https://openapi.programming-hero.com/api/bazardor/products";
 
     fetch(apiUrl)
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) {
+          if (selectedCategory) setIsNotFound(true);
+          return null;
+        }
+        return res.json();
+      })
       .then((data) => {
         const list = Array.isArray(data) ? data : data?.data || [];
-        setProducts(list);
+        if (selectedCategory && list.length === 0) {
+          setIsNotFound(true);
+        } else {
+          setProducts(list);
+        }
         setLoading(false);
       })
       .catch((err) => {
         console.error("Products fetch error:", err);
+        if (selectedCategory) setIsNotFound(true);
         setLoading(false);
       });
   }, [selectedCategory]);
+
+  const sortedCategoryProducts = useMemo(() => {
+    if (sortBy === "low-to-high") {
+      return [...products].sort((a, b) => Number(a.today) - Number(b.today));
+    }
+    if (sortBy === "high-to-low") {
+      return [...products].sort((a, b) => Number(b.today) - Number(a.today));
+    }
+    return products;
+  }, [products, sortBy]);
+
+  if (isNotFound) {
+    notFound();
+  }
 
   const topRisers = [...products]
     .filter((p) => p.change?.dir === "up")
@@ -155,7 +177,6 @@ export default function ProductSection() {
       </div>
     );
   }
-
   if (selectedCategory) {
     const categoryName = products[0]?.categoryNameBn || selectedCategory;
     const categoryIcon = products[0]?.categoryIcon || products[0]?.image || "🛒";
@@ -163,20 +184,49 @@ export default function ProductSection() {
     return (
       <div className="bg-[#F0F5F0]/60 py-8 min-h-[60vh]">
         <div className="container mx-auto px-4 max-w-6xl space-y-6">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <span className="text-2xl">{categoryIcon}</span>
-              <h1 className="text-2xl sm:text-3xl font-bold text-[#1D271F]">{categoryName}</h1>
+          
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-gray-200/60 pb-4">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <span className="text-2xl sm:text-3xl">{categoryIcon}</span>
+                <h1 className="text-2xl sm:text-3xl font-bold text-[#1D271F]">{categoryName}</h1>
+              </div>
+              <p className="text-xs sm:text-sm text-gray-500">এই বিভাগের আজকের দাম ও পরিবর্তন</p>
+              <p className="text-xs sm:text-sm text-gray-500 pt-1 font-medium">
+                মোট {toBnNum(sortedCategoryProducts.length)}টি পণ্য দেখানো হচ্ছে
+              </p>
             </div>
-            <p className="text-xs sm:text-sm text-gray-500">এই বিভাগের আজকের দাম ও পরিবর্তন</p>
-            <p className="text-xs sm:text-sm text-gray-500 pt-3">মোট {toBnNum(products.length)}টি পণ্য দেখানো হচ্ছে</p>
+
+            <div className="flex items-center gap-2 shrink-0">
+              <label htmlFor="sort-select" className="text-xs sm:text-sm font-semibold text-gray-700 whitespace-nowrap">
+                সাজান:
+              </label>
+              <div className="relative inline-block w-48">
+                <select
+                  id="sort-select"
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as SortOption)}
+                  className="w-full appearance-none bg-white border border-gray-200 hover:border-gray-300 rounded-xl px-3.5 py-2 pr-9 text-xs sm:text-sm font-medium text-gray-800 shadow-2xs focus:outline-none focus:border-[#05893e] cursor-pointer transition-colors"
+                >
+                  <option value="default">ডিফল্ট</option>
+                  <option value="low-to-high">দাম: কম থেকে বেশি</option>
+                  <option value="high-to-low">দাম: বেশি থেকে কম</option>
+                </select>
+                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2.5 text-gray-400">
+                  <svg className="w-4 h-4 fill-current" viewBox="0 0 20 20">
+                    <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
+                  </svg>
+                </div>
+              </div>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {products.map((product) => (
+            {sortedCategoryProducts.map((product) => (
               <ProductCard key={`cat-prod-${product.id}`} product={product} isAuthenticated={isAuthenticated} />
             ))}
           </div>
+
         </div>
       </div>
     );

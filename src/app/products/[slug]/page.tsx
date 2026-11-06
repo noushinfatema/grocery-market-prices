@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, Suspense } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, notFound } from "next/navigation";
 import Link from "next/link";
 import { useSession } from "@/lib/auth-client";
 
@@ -19,6 +19,7 @@ function ProductDetailContent() {
   const { data: session, isPending: sessionLoading } = useSession();
   const [product, setProduct] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [isNotFound, setIsNotFound] = useState(false);
 
   useEffect(() => {
     if (!sessionLoading && !session?.user) {
@@ -30,50 +31,65 @@ function ProductDetailContent() {
     if (!slug) return;
     
     fetch(`https://openapi.programming-hero.com/api/bazardor/products/${slug}`)
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) {
+          setIsNotFound(true);
+          return null;
+        }
+        return res.json();
+      })
       .then((data) => {
-        setProduct(data?.data || data);
+        const item = data?.data || data;
+        if (!data || data.status === false || (!item?.id && !item?.nameBn)) {
+          setIsNotFound(true);
+        } else {
+          setProduct(item);
+        }
         setLoading(false);
       })
       .catch((err) => {
         console.error(err);
+        setIsNotFound(true);
         setLoading(false);
       });
   }, [slug]);
+
+  if (isNotFound) {
+    notFound();
+  }
 
   if (sessionLoading || loading) {
     return <div className="py-20 text-center text-gray-400">পণ্য লোড হচ্ছে...</div>;
   }
 
-  if (!product) {
-    return <div className="py-20 text-center text-red-500">পণ্য পাওয়া যায়নি</div>;
-  }
+  if (!product) return null;
 
   const isUp = product.change?.dir === "up";
   const isDown = product.change?.dir === "down";
   
   const difference = (product.today || 0) - (product.yesterday || 0);
   const diffText = difference > 0 ? `বেড়েছে + ${toBnNum(difference)}` : difference < 0 ? `কমেছে - ${toBnNum(Math.abs(difference))}` : "অপরিবর্তিত আছে";
-  const unitText = product.unit === 'kg' ? 'কেজি' : product.unit;
+  const unitText = product.unit === 'kg' ? 'কেজি' : product.unit === 'lit' || product.unit === 'liter' ? 'লিটার' : product.unit;
 
-  // Fallback if markets array is missing
   const rawMarkets = product.markets || [];
 
-  // Calculate dynamic min, max, and avg for each market and overall summary
   const markets = rawMarkets.map((m: any) => {
-    const avgVal = Number(((m.min + m.max) / 2).toFixed(1));
+    const minVal = m.min ?? 0;
+    const maxVal = m.max ?? 0;
+    const avgVal = m.avg ?? Number(((minVal + maxVal) / 2).toFixed(1));
     return {
       ...m,
+      marketName: m.market || m.name || "বাজার",
+      min: minVal,
+      max: maxVal,
       avg: avgVal
     };
   });
-
-  // Calculate overall summary stats from markets if available
   const allMins = markets.map((m: any) => m.min);
   const allMaxs = markets.map((m: any) => m.max);
-  const overallMin = allMins.length ? Math.min(...allMins) : 0;
-  const overallMax = allMaxs.length ? Math.max(...allMaxs) : 0;
-  const overallAvg = markets.length ? Math.round(markets.reduce((acc: number, m: any) => acc + m.avg, 0) / markets.length) : 0;
+  const overallMin = allMins.length ? Math.min(...allMins) : (product.today || 0);
+  const overallMax = allMaxs.length ? Math.max(...allMaxs) : (product.today || 0);
+  const overallAvg = markets.length ? Math.round(markets.reduce((acc: number, m: any) => acc + m.avg, 0) / markets.length) : (product.today || 0);
 
   return (
     <div className="bg-[#F0F5F0]/40 py-8 min-h-[85vh]">
@@ -117,12 +133,12 @@ function ProductDetailContent() {
               {toBnNum(product.today || 0)}
             </span>
             <span className="text-[11px] text-gray-500">টাকা / {unitText}</span>
-            {isUp && (
+            {isUp && product.change?.pct && (
               <span className="text-xs text-red-500 font-bold block mt-1">
                 ▲ {toBnNum(product.change.pct)}%
               </span>
             )}
-            {isDown && (
+            {isDown && product.change?.pct && (
               <span className="text-xs text-emerald-600 font-bold block mt-1">
                 ▼ {toBnNum(product.change.pct)}%
               </span>
@@ -130,7 +146,6 @@ function ProductDetailContent() {
           </div>
         </div>
 
-        {/* Dynamic Summary Cards */}
         <div className="space-y-4 pt-4">
           <h2 className="text-lg font-bold text-[#1D271F]">দামের সারসংক্ষেপ</h2>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -160,7 +175,6 @@ function ProductDetailContent() {
           </div>
         </div>
 
-        {/* Market Table */}
         <div className="space-y-4 pt-4">
           <h2 className="text-lg font-bold text-[#1D271F]">বাজারভিত্তিক আজকের দাম</h2>
           <div className="bg-white rounded-2xl border border-gray-100 shadow-2xs overflow-hidden">
@@ -178,12 +192,10 @@ function ProductDetailContent() {
                 <tbody className="divide-y divide-gray-50 text-gray-700">
                   {markets.map((m: any, idx: number) => (
                     <tr key={idx} className="hover:bg-gray-50/50 transition-colors">
-                      {/* Fixed: changed m.name to m.market */}
-                      <td className="p-4 font-medium text-gray-900">{m.market}</td>
+                      <td className="p-4 font-medium text-gray-900">{m.marketName}</td>
                       <td className="p-4 text-gray-500">{m.division}</td>
                       <td className="p-4">{toBnNum(m.min)} টাকা</td>
                       <td className="p-4">{toBnNum(m.max)} টাকা</td>
-                      {/* Fixed: now displays the dynamically calculated average */}
                       <td className="p-4 font-semibold text-gray-900">{toBnNum(m.avg)} টাকা</td>
                     </tr>
                   ))}
